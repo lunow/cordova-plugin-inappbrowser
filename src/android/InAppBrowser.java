@@ -115,6 +115,11 @@ public class InAppBrowser extends CordovaPlugin {
             }
             final String target = t;
             final HashMap<String, Boolean> features = parseFeature(args.optString(2));
+            final HashMap<String, Integer> params = new HashMap<String, Integer>();
+            params.put("x", 0);
+            params.put("y", 200);
+            params.put("width", 1280);
+            params.put("height", 600);
 
             Log.d(LOG_TAG, "target = " + target);
 
@@ -174,7 +179,7 @@ public class InAppBrowser extends CordovaPlugin {
                         // load in InAppBrowser
                         else {
                             Log.d(LOG_TAG, "loading in InAppBrowser");
-                            result = showWebPage(url, features);
+                            result = showWebPage(url, features, params);
                         }
                     }
                     // SYSTEM
@@ -185,7 +190,7 @@ public class InAppBrowser extends CordovaPlugin {
                     // BLANK - or anything else
                     else {
                         Log.d(LOG_TAG, "in blank");
-                        result = showWebPage(url, features);
+                        result = showWebPage(url, features, params);
                     }
 
                     PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, result);
@@ -466,7 +471,7 @@ public class InAppBrowser extends CordovaPlugin {
      * @param url the url to load.
      * @param features jsonObject
      */
-    public String showWebPage(final String url, HashMap<String, Boolean> features) {
+    public String showWebPage(final String url, HashMap<String, Boolean> features, HashMap<String, Integer> params) {
         // Determine if we should hide the location bar.
         showLocationBar = true;
         showZoomControls = true;
@@ -500,6 +505,7 @@ public class InAppBrowser extends CordovaPlugin {
         }
 
         final CordovaWebView thatWebView = this.webView;
+        final HashMap<String, Integer> webViewParams = params;
 
         // Create dialog in new thread
         Runnable runnable = new Runnable() {
@@ -639,6 +645,17 @@ public class InAppBrowser extends CordovaPlugin {
                     }
                 });
 
+                Window window = dialog.getWindow();
+                WindowManager.LayoutParams wlp = window.getAttributes();
+                wlp.gravity = Gravity.TOP | Gravity.LEFT;
+                wlp.width = this.dpToPixels(webViewParams.get("width"));
+                wlp.height = this.dpToPixels(webViewParams.get("height"));
+                wlp.dimAmount=0.5f; 
+                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+                window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                window.setAttributes(wlp);
+
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
                 inAppWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
@@ -694,8 +711,10 @@ public class InAppBrowser extends CordovaPlugin {
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
                 lp.copyFrom(dialog.getWindow().getAttributes());
-                lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-                lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+                lp.x = this.dpToPixels(webViewParams.get("x"));
+                lp.y = this.dpToPixels(webViewParams.get("y"));
+                lp.width = this.dpToPixels(webViewParams.get("width"));
+                lp.height = this.dpToPixels(webViewParams.get("height"));
 
                 dialog.setContentView(main);
                 dialog.show();
