@@ -19,6 +19,8 @@
 
 # cordova-plugin-inappbrowser
 
+Hard coded version of the inAppBrowser plugin to adjust to my custom size
+
 This plugin provides a web browser view that displays when calling `cordova.InAppBrowser.open()`.
 
     var ref = cordova.InAppBrowser.open('http://apache.org', '_blank', 'location=yes');
