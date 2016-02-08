@@ -240,14 +240,7 @@ public class InAppBrowser extends CordovaPlugin {
             this.cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        if ( dialog != null ) {
-                            dialog.show();
-                        }
-                    }
-                    catch (Exception aException) {
-
-                    }
+                    dialog.show();
                 }
             });
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
@@ -258,14 +251,7 @@ public class InAppBrowser extends CordovaPlugin {
             this.cordova.getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        if ( dialog != null ) {
-                            dialog.hide();
-                        }
-                    }
-                    catch (Exception aExeption) {
-
-                    }
+                    dialog.hide();
                 }
             });
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
