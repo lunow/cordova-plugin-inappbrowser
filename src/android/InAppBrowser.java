@@ -399,7 +399,7 @@ public class InAppBrowser extends CordovaPlugin {
 //<<<<<<< HEAD
                             //dialog = null;
 //=======
-                            dialog = null;
+                            //dialog = null;
 //>>>>>>> apache/master
                         }
                     }
