@@ -119,7 +119,7 @@ public class InAppBrowser extends CordovaPlugin {
             params.put("x", 0);
             params.put("y", 53);
             params.put("width", 1280);
-            params.put("height", 800 - 54);
+            params.put("height", 800 - 53);
 
             Log.d(LOG_TAG, "target = " + target);
 
