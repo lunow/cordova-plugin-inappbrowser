@@ -116,10 +116,10 @@ public class InAppBrowser extends CordovaPlugin {
             final String target = t;
             final HashMap<String, Boolean> features = parseFeature(args.optString(2));
             final HashMap<String, Integer> params = new HashMap<String, Integer>();
-            params.put("x", 166);
-            params.put("y", 88);
-            params.put("width", 625);
-            params.put("height", 420);
+            params.put("x", 0);
+            params.put("y", 61);
+            params.put("width", 962);
+            params.put("height", 601 - 61);
 
             Log.d(LOG_TAG, "target = " + target);
 
