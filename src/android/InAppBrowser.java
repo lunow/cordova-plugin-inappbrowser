@@ -97,7 +97,7 @@ public class InAppBrowser extends CordovaPlugin {
     private EditText edittext;
     private CallbackContext callbackContext;
     private boolean showLocationBar = true;
-    private boolean showZoomControls = true;
+    private boolean showZoomControls = false;
     private boolean openWindowHidden = false;
     private boolean clearAllCache = false;
     private boolean clearSessionCache = false;
@@ -604,10 +604,20 @@ public class InAppBrowser extends CordovaPlugin {
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 dialog.setCancelable(true);
                 dialog.setInAppBroswer(getInAppBrowser());
+                
 
                 // Main container layout
                 LinearLayout main = new LinearLayout(cordova.getActivity());
                 main.setOrientation(LinearLayout.VERTICAL);
+
+                // is not working:
+                // main.setTop(this.dpToPixels(50));
+                // is not working:
+                // LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)main.getLayoutParams();
+                // params.setMargins(0, 50, 0, 0); 
+                // main.setLayoutParams(params);
+                // is working, but adds just 50px black frame
+                // main.setPadding(this.dpToPixels(50), this.dpToPixels(50), this.dpToPixels(50), this.dpToPixels(50));
 
                 // Toolbar layout
                 RelativeLayout toolbar = new RelativeLayout(cordova.getActivity());
@@ -836,8 +846,10 @@ public class InAppBrowser extends CordovaPlugin {
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
                 lp.copyFrom(dialog.getWindow().getAttributes());
+                lp.gravity = Gravity.BOTTOM;
                 lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-                lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+                // lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+                lp.height = 600;
 
                 dialog.setContentView(main);
                 dialog.show();
