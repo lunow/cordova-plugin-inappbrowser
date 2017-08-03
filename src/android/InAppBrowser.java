@@ -605,19 +605,9 @@ public class InAppBrowser extends CordovaPlugin {
                 dialog.setCancelable(true);
                 dialog.setInAppBroswer(getInAppBrowser());
                 
-
                 // Main container layout
                 LinearLayout main = new LinearLayout(cordova.getActivity());
                 main.setOrientation(LinearLayout.VERTICAL);
-
-                // is not working:
-                // main.setTop(this.dpToPixels(50));
-                // is not working:
-                // LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)main.getLayoutParams();
-                // params.setMargins(0, 50, 0, 0); 
-                // main.setLayoutParams(params);
-                // is working, but adds just 50px black frame
-                // main.setPadding(this.dpToPixels(50), this.dpToPixels(50), this.dpToPixels(50), this.dpToPixels(50));
 
                 // Toolbar layout
                 RelativeLayout toolbar = new RelativeLayout(cordova.getActivity());
