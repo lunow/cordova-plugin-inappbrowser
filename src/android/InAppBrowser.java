@@ -97,7 +97,7 @@ public class InAppBrowser extends CordovaPlugin {
     private EditText edittext;
     private CallbackContext callbackContext;
     private boolean showLocationBar = true;
-    private boolean showZoomControls = true;
+    private boolean showZoomControls = false;
     private boolean openWindowHidden = false;
     private boolean clearAllCache = false;
     private boolean clearSessionCache = false;
@@ -604,7 +604,7 @@ public class InAppBrowser extends CordovaPlugin {
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 dialog.setCancelable(true);
                 dialog.setInAppBroswer(getInAppBrowser());
-
+                
                 // Main container layout
                 LinearLayout main = new LinearLayout(cordova.getActivity());
                 main.setOrientation(LinearLayout.VERTICAL);
@@ -724,6 +724,23 @@ public class InAppBrowser extends CordovaPlugin {
                     }
                 });
 
+                // Change browser size here
+                final int screenWidth = 960;
+                final int screenHeight = 600;
+                final int posX = 0;
+                final int posY = 60;
+
+                Window window = dialog.getWindow();
+                WindowManager.LayoutParams wlp = window.getAttributes();
+                wlp.gravity = Gravity.TOP | Gravity.LEFT;
+                wlp.width = this.dpToPixels(screenWidth - posX);
+                wlp.height = this.dpToPixels(screenHeight - posY);
+                wlp.dimAmount=0.5f; 
+                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+                window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                window.setAttributes(wlp);
+
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
                 inAppWebView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
@@ -836,8 +853,10 @@ public class InAppBrowser extends CordovaPlugin {
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
                 lp.copyFrom(dialog.getWindow().getAttributes());
-                lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-                lp.height = WindowManager.LayoutParams.MATCH_PARENT;
+                lp.x = this.dpToPixels(posX);
+                lp.y = this.dpToPixels(posY);
+                lp.width = this.dpToPixels(screenWidth - posX);
+                lp.height = this.dpToPixels(screenHeight - posY);
 
                 dialog.setContentView(main);
                 dialog.show();
