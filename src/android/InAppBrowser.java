@@ -80,6 +80,7 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String EXIT_EVENT = "exit";
     private static final String LOCATION = "location";
     private static final String ZOOM = "zoom";
+    private static final String ZOOMBUTTONS = "zoombuttons";
     private static final String HIDDEN = "hidden";
     private static final String LOAD_START_EVENT = "loadstart";
     private static final String LOAD_STOP_EVENT = "loadstop";
@@ -98,6 +99,7 @@ public class InAppBrowser extends CordovaPlugin {
     private CallbackContext callbackContext;
     private boolean showLocationBar = true;
     private boolean showZoomControls = false;
+    private boolean showZoomControlsButtons = false;
     private boolean openWindowHidden = false;
     private boolean clearAllCache = false;
     private boolean clearSessionCache = false;
@@ -527,6 +529,7 @@ public class InAppBrowser extends CordovaPlugin {
         // Determine if we should hide the location bar.
         showLocationBar = true;
         showZoomControls = true;
+        showZoomControlsButtons = true;
         openWindowHidden = false;
         mediaPlaybackRequiresUserGesture = false;
 
@@ -538,6 +541,10 @@ public class InAppBrowser extends CordovaPlugin {
             Boolean zoom = features.get(ZOOM);
             if (zoom != null) {
                 showZoomControls = zoom.booleanValue();
+            }
+            Boolean zoomButtons = features.get(ZOOMBUTTONS);
+            if (zoomButtons != null) {
+                showZoomControlsButtons = zoomButtons.booleanValue();
             }
             Boolean hidden = features.get(HIDDEN);
             if (hidden != null) {
@@ -794,6 +801,7 @@ public class InAppBrowser extends CordovaPlugin {
                 settings.setJavaScriptEnabled(true);
                 settings.setJavaScriptCanOpenWindowsAutomatically(true);
                 settings.setBuiltInZoomControls(showZoomControls);
+                settings.setDisplayZoomControls(showZoomControlsButtons);
                 settings.setPluginState(android.webkit.WebSettings.PluginState.ON);
 
                 if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
