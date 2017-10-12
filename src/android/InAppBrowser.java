@@ -733,9 +733,9 @@ public class InAppBrowser extends CordovaPlugin {
 
                 // Change browser size here
                 final int screenWidth = 960;
-                final int screenHeight = 600;
+                final int screenHeight = 578;
                 final int posX = 0;
-                final int posY = 60;
+                final int posY = 82;
 
                 Window window = dialog.getWindow();
                 WindowManager.LayoutParams wlp = window.getAttributes();
