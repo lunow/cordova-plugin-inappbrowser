@@ -91,7 +91,6 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String EXIT_EVENT = "exit";
     private static final String LOCATION = "location";
     private static final String ZOOM = "zoom";
-    private static final String ZOOMBUTTONS = "zoombuttons";
     private static final String HIDDEN = "hidden";
     private static final String LOAD_START_EVENT = "loadstart";
     private static final String LOAD_STOP_EVENT = "loadstop";
@@ -116,15 +115,14 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String POS_X = "posx";
     private static final String POS_Y = "posy";
 
-    private static final List customizableOptions = Arrays.asList(CLOSE_BUTTON_CAPTION, TOOLBAR_COLOR, NAVIGATION_COLOR, CLOSE_BUTTON_COLOR, FOOTER_COLOR);
+    private static final List customizableOptions = Arrays.asList(CLOSE_BUTTON_CAPTION, TOOLBAR_COLOR, NAVIGATION_COLOR, CLOSE_BUTTON_COLOR, FOOTER_COLOR, HEIGHT, WIDTH, POS_X, POS_Y);
 
     private InAppBrowserDialog dialog;
     private WebView inAppWebView;
     private EditText edittext;
     private CallbackContext callbackContext;
     private boolean showLocationBar = true;
-    private boolean showZoomControls = false;
-    private boolean showZoomControlsButtons = false;
+    private boolean showZoomControls = true;
     private boolean openWindowHidden = false;
     private boolean clearAllCache = false;
     private boolean clearSessionCache = false;
@@ -146,7 +144,7 @@ public class InAppBrowser extends CordovaPlugin {
     private String footerColor = "";
     private String[] allowedSchemes;
     private int browserHeight = 0;
-    private int browserWidtth = 0;
+    private int browserWidth = 0;
     private int browserPositionX = 0;
     private int browserPositionY = 0;
 
@@ -450,9 +448,7 @@ public class InAppBrowser extends CordovaPlugin {
             // CB-10795: Avoid circular loops by preventing it from opening in the current app
             this.openExternalExcludeCurrentApp(intent);
             return "";
-
             // not catching FileUriExposedException explicitly because buildtools<24 doesn't know about it
-
         } catch (java.lang.RuntimeException e) {
             LOG.d(LOG_TAG, "InAppBrowser: Error loading url "+url+":"+ e.toString());
             return e.toString();
@@ -613,7 +609,6 @@ public class InAppBrowser extends CordovaPlugin {
         // Determine if we should hide the location bar.
         showLocationBar = true;
         showZoomControls = true;
-        showZoomControlsButtons = true;
         openWindowHidden = false;
         mediaPlaybackRequiresUserGesture = false;
 
@@ -689,27 +684,19 @@ public class InAppBrowser extends CordovaPlugin {
             }
             String browserHeightSet = features.get(HEIGHT);
             if (browserHeightSet != null) {
-              browserHeight = browserHeightSet;
-            } else {
-              Window window = dialog.getWindow();
-              WindowManager.LayoutParams wlp = window.getAttributes();
-              browserHeight = wlp.height;
+              browserHeight = Integer.parseInt(browserHeightSet);
             }
-            String browserHeightSet = features.get(WIDTH);
+            String browserWidthSet = features.get(WIDTH);
             if (browserWidthSet != null) {
-              browserWidth = browserWidthSet;
-            } else {
-              Window window = dialog.getWindow();
-              WindowManager.LayoutParams wlp = window.getAttributes();
-              browserWidth = wlp.width;
+              browserWidth = Integer.parseInt(browserWidthSet);
             }
             String browserPositionXSet = features.get(POS_X);
             if (browserPositionXSet != null) {
-              browserPositionX = browserPositionXSet;
+              browserPositionX = Integer.parseInt(browserPositionXSet);
             }
             String browserPositionYSet = features.get(POS_Y);
             if (browserPositionYSet != null) {
-              browserPositionY = browserPositionYSet;
+              browserPositionY = Integer.parseInt(browserPositionYSet);
             }
         }
 
@@ -823,9 +810,7 @@ public class InAppBrowser extends CordovaPlugin {
                 Resources activityRes = cordova.getActivity().getResources();
                 int backResId = activityRes.getIdentifier("ic_action_previous_item", "drawable", cordova.getActivity().getPackageName());
                 Drawable backIcon = activityRes.getDrawable(backResId);
-
                 if (navigationButtonColor != "") back.setColorFilter(android.graphics.Color.parseColor(navigationButtonColor));
-
                 if (Build.VERSION.SDK_INT >= 16)
                     back.setBackground(null);
                 else
@@ -851,9 +836,7 @@ public class InAppBrowser extends CordovaPlugin {
                 forward.setId(Integer.valueOf(3));
                 int fwdResId = activityRes.getIdentifier("ic_action_next_item", "drawable", cordova.getActivity().getPackageName());
                 Drawable fwdIcon = activityRes.getDrawable(fwdResId);
-
                 if (navigationButtonColor != "") forward.setColorFilter(android.graphics.Color.parseColor(navigationButtonColor));
-
                 if (Build.VERSION.SDK_INT >= 16)
                     forward.setBackground(null);
                 else
@@ -893,6 +876,7 @@ public class InAppBrowser extends CordovaPlugin {
                     }
                 });
 
+
                 // Header Close/Done button
                 View close = createCloseButton(5);
                 toolbar.addView(close);
@@ -900,9 +884,9 @@ public class InAppBrowser extends CordovaPlugin {
                 // Footer
                 RelativeLayout footer = new RelativeLayout(cordova.getActivity());
                 int _footerColor;
-                if (footerColor != "") {
+                if(footerColor != ""){
                     _footerColor = Color.parseColor(footerColor);
-                } else {
+                }else{
                     _footerColor = android.graphics.Color.LTGRAY;
                 }
                 footer.setBackgroundColor(_footerColor);
@@ -920,13 +904,15 @@ public class InAppBrowser extends CordovaPlugin {
                 Window window = dialog.getWindow();
                 WindowManager.LayoutParams wlp = window.getAttributes();
                 wlp.gravity = Gravity.TOP | Gravity.LEFT;
+                LOG.d(LOG_TAG, "Set browser size width: " + browserWidth + " height: " + browserHeight);
                 wlp.width = this.dpToPixels(browserWidth - browserPositionX);
                 wlp.height = this.dpToPixels(browserHeight - browserPositionY);
                 wlp.dimAmount = 0.5f;
-                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+
+                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
                 window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
                 window.setAttributes(wlp);
+
 
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
@@ -981,7 +967,6 @@ public class InAppBrowser extends CordovaPlugin {
                 settings.setJavaScriptEnabled(true);
                 settings.setJavaScriptCanOpenWindowsAutomatically(true);
                 settings.setBuiltInZoomControls(showZoomControls);
-                settings.setDisplayZoomControls(showZoomControlsButtons);
                 settings.setPluginState(android.webkit.WebSettings.PluginState.ON);
 
                 if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -1052,12 +1037,13 @@ public class InAppBrowser extends CordovaPlugin {
 
                 WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
                 lp.copyFrom(dialog.getWindow().getAttributes());
-                lp.x = this.dpToPixels(posX);
-                lp.y = this.dpToPixels(posY);
- brows                 lp.width = this.dpToPixels(screenWidth - posX);
-                lp.height = this.dpToPixels(screenHeight - posY)  ;
+                lp.x = this.dpToPixels(browserPositionX);
+                lp.y = this.dpToPixels(browserPositionY);
+                LOG.d(LOG_TAG, "Set browser size width: " + browserWidth + " height: " + browserHeight);
+                lp.width = this.dpToPixels(browserWidth - browserPositionX);
+                lp.height = this.dpToPixels(browserHeight - browserPositionY)  ;
 
-                 dialog.setContentView(main);
+                dialog.setContentView(main);
                 dialog.show();
                 dialog.getWindow().setAttributes(lp);
                 // the goal of openhidden is to load the url and not display it
@@ -1072,8 +1058,13 @@ public class InAppBrowser extends CordovaPlugin {
     }
 
     /**
-    * Create a new plugin success result and send it back to JavaScript
-   }
+     * Create a new plugin success result and send it back to JavaScript
+     *
+     * @param obj a JSONObject contain event payload information
+     */
+    private void sendUpdate(JSONObject obj, boolean keepCallback) {
+        sendUpdate(obj, keepCallback, PluginResult.Status.OK);
+    }
 
     /**
      * Create a new plugin result and send it back to JavaScript
@@ -1094,7 +1085,7 @@ public class InAppBrowser extends CordovaPlugin {
 
     /**
      * Receive File Data from File Chooser
-     *
+     */
      * @param requestCode the requested code from chromeclient
      * @param resultCode the result code returned from android system
      * @param intent the data from android file chooser
@@ -1260,7 +1251,7 @@ public class InAppBrowser extends CordovaPlugin {
             // Update the UI if we haven't already
             if (!newloc.equals(edittext.getText().toString())) {
                 edittext.setText(newloc);
-             }
+            }
 
             try {
                 JSONObject obj = new JSONObject();
