@@ -515,6 +515,8 @@ public class InAppBrowser extends CordovaPlugin {
                         if (dialog != null) {
                             dialog.dismiss();
                             dialog = null;
+                            view.destroy();
+                            view = null;
                         }
                     }
                 });
@@ -904,15 +906,28 @@ public class InAppBrowser extends CordovaPlugin {
                 Window window = dialog.getWindow();
                 WindowManager.LayoutParams wlp = window.getAttributes();
                 wlp.gravity = Gravity.TOP | Gravity.LEFT;
-                LOG.d(LOG_TAG, "Set browser size width: " + browserWidth + " height: " + browserHeight);
-                wlp.width = this.dpToPixels(browserWidth - browserPositionX);
-                wlp.height = this.dpToPixels(browserHeight - browserPositionY);
+                wlp.x = this.dpToPixels(browserPositionX);
+                wlp.y = this.dpToPixels(browserPositionY);
+                wlp.width = this.dpToPixels(browserWidth);
+                wlp.height = this.dpToPixels(browserHeight);
                 wlp.dimAmount = 0.5f;
 
                 window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
                 window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
                 window.setAttributes(wlp);
 
+                View decorView = window.getDecorView();
+                decorView.setSystemUiVisibility(
+                                                View.SYSTEM_UI_FLAG_IMMERSIVE
+                                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                                // Set the content to appear under the system bars so that the
+                                                // content doesn't resize when the system bars hide and show.
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                                // Hide the nav bar and status bar
+                                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                                | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
@@ -1035,17 +1050,9 @@ public class InAppBrowser extends CordovaPlugin {
                     webViewLayout.addView(footer);
                 }
 
-                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-                lp.copyFrom(dialog.getWindow().getAttributes());
-                lp.x = this.dpToPixels(browserPositionX);
-                lp.y = this.dpToPixels(browserPositionY);
-                LOG.d(LOG_TAG, "Set browser size width: " + browserWidth + " height: " + browserHeight);
-                lp.width = this.dpToPixels(browserWidth - browserPositionX);
-                lp.height = this.dpToPixels(browserHeight - browserPositionY)  ;
-
                 dialog.setContentView(main);
                 dialog.show();
-                dialog.getWindow().setAttributes(lp);
+
                 // the goal of openhidden is to load the url and not display it
                 // Show() needs to be called to cause the URL to be loaded
                 if(openWindowHidden) {
