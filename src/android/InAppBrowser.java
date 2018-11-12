@@ -110,6 +110,7 @@ public class InAppBrowser extends CordovaPlugin {
     private static final String HIDE_URL = "hideurlbar";
     private static final String FOOTER = "footer";
     private static final String FOOTER_COLOR = "footercolor";
+    private static final String BEFORELOAD = "beforeload";
     private static final String HEIGHT = "height";
     private static final String WIDTH = "width";
     private static final String POS_X = "posx";
@@ -142,6 +143,7 @@ public class InAppBrowser extends CordovaPlugin {
     private boolean hideUrlBar = false;
     private boolean showFooter = false;
     private String footerColor = "";
+    private boolean useBeforeload = false;
     private String[] allowedSchemes;
     private int browserHeight = 0;
     private int browserWidth = 0;
@@ -253,6 +255,20 @@ public class InAppBrowser extends CordovaPlugin {
         }
         else if (action.equals("close")) {
             closeDialog();
+        }
+        else if (action.equals("loadAfterBeforeload")) {
+            if (!useBeforeload) {
+              LOG.e(LOG_TAG, "unexpected loadAfterBeforeload called without feature beforeload=yes");
+            }
+            final String url = args.getString(0);
+            this.cordova.getActivity().runOnUiThread(new Runnable() {
+                @SuppressLint("NewApi")
+                @Override
+                public void run() {
+                    ((InAppBrowserClient)inAppWebView.getWebViewClient()).waitForBeforeload = false;
+                    inAppWebView.loadUrl(url);
+                }
+            });
         }
         else if (action.equals("injectScriptCode")) {
             String jsWrapper = null;
@@ -684,6 +700,10 @@ public class InAppBrowser extends CordovaPlugin {
             if (footerColorSet != null) {
                 footerColor = footerColorSet;
             }
+            String beforeload = features.get(BEFORELOAD);
+            if (beforeload != null) {
+                useBeforeload = beforeload.equals("yes") ? true : false;
+            }
             String browserHeightSet = features.get(HEIGHT);
             if (browserHeightSet != null) {
               browserHeight = Integer.parseInt(browserHeightSet);
@@ -902,32 +922,6 @@ public class InAppBrowser extends CordovaPlugin {
                 View footerClose = createCloseButton(7);
                 footer.addView(footerClose);
 
-                // Resize the window based on the options
-                Window window = dialog.getWindow();
-                WindowManager.LayoutParams wlp = window.getAttributes();
-                wlp.gravity = Gravity.TOP | Gravity.LEFT;
-                wlp.x = this.dpToPixels(browserPositionX);
-                wlp.y = this.dpToPixels(browserPositionY);
-                wlp.width = this.dpToPixels(browserWidth);
-                wlp.height = this.dpToPixels(browserHeight);
-                wlp.dimAmount = 0.5f;
-
-                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-                window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-                window.setAttributes(wlp);
-
-                View decorView = window.getDecorView();
-                decorView.setSystemUiVisibility(
-                                                View.SYSTEM_UI_FLAG_IMMERSIVE
-                                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                                                // Set the content to appear under the system bars so that the
-                                                // content doesn't resize when the system bars hide and show.
-                                                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                                // Hide the nav bar and status bar
-                                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                                | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
                 // WebView
                 inAppWebView = new WebView(cordova.getActivity());
@@ -976,7 +970,7 @@ public class InAppBrowser extends CordovaPlugin {
                     }
 
                 });
-                WebViewClient client = new InAppBrowserClient(thatWebView, edittext);
+                WebViewClient client = new InAppBrowserClient(thatWebView, edittext, useBeforeload);
                 inAppWebView.setWebViewClient(client);
                 WebSettings settings = inAppWebView.getSettings();
                 settings.setJavaScriptEnabled(true);
@@ -1050,8 +1044,43 @@ public class InAppBrowser extends CordovaPlugin {
                     webViewLayout.addView(footer);
                 }
 
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+                lp.copyFrom(dialog.getWindow().getAttributes());
+
+                lp.gravity = Gravity.TOP | Gravity.LEFT;
+                lp.x = this.dpToPixels(browserPositionX);
+                lp.y = this.dpToPixels(browserPositionY);
+                lp.width = this.dpToPixels(browserWidth);
+                lp.height = this.dpToPixels(browserHeight);
+                lp.dimAmount = 0.5f;
+
                 dialog.setContentView(main);
                 dialog.show();
+                dialog.getWindow().setAttributes(lp);
+
+                // Resize the window based on the options
+                Window window = dialog.getWindow();
+                window.setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                  window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                                  WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+                }
+
+                window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+                View decorView = window.getDecorView();
+                decorView.setSystemUiVisibility(
+                                                View.SYSTEM_UI_FLAG_IMMERSIVE
+                                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                                // Set the content to appear under the system bars so that the
+                                                // content doesn't resize when the system bars hide and show.
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                                // Hide the nav bar and status bar
+                                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                                | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
                 // the goal of openhidden is to load the url and not display it
                 // Show() needs to be called to cause the URL to be loaded
@@ -1132,6 +1161,8 @@ public class InAppBrowser extends CordovaPlugin {
     public class InAppBrowserClient extends WebViewClient {
         EditText edittext;
         CordovaWebView webView;
+        boolean useBeforeload;
+        boolean waitForBeforeload;
 
         /**
          * Constructor.
@@ -1139,9 +1170,11 @@ public class InAppBrowser extends CordovaPlugin {
          * @param webView
          * @param mEditText
          */
-        public InAppBrowserClient(CordovaWebView webView, EditText mEditText) {
+        public InAppBrowserClient(CordovaWebView webView, EditText mEditText, boolean useBeforeload) {
             this.webView = webView;
             this.edittext = mEditText;
+            this.useBeforeload = useBeforeload;
+            this.waitForBeforeload = useBeforeload;
         }
 
         /**
@@ -1154,12 +1187,27 @@ public class InAppBrowser extends CordovaPlugin {
          */
         @Override
         public boolean shouldOverrideUrlLoading(WebView webView, String url) {
+            boolean override = false;
+
+            // On first URL change, initiate JS callback. Only after the beforeload event, continue.
+            if (this.waitForBeforeload) {
+                try {
+                    JSONObject obj = new JSONObject();
+                    obj.put("type", "beforeload");
+                    obj.put("url", url);
+                    sendUpdate(obj, true);
+                    return true;
+                } catch (JSONException ex) {
+                    LOG.e(LOG_TAG, "URI passed in has caused a JSON error.");
+                }
+            }
+
             if (url.startsWith(WebView.SCHEME_TEL)) {
                 try {
                     Intent intent = new Intent(Intent.ACTION_DIAL);
                     intent.setData(Uri.parse(url));
                     cordova.getActivity().startActivity(intent);
-                    return true;
+                    override = true;
                 } catch (android.content.ActivityNotFoundException e) {
                     LOG.e(LOG_TAG, "Error dialing " + url + ": " + e.toString());
                 }
@@ -1168,7 +1216,7 @@ public class InAppBrowser extends CordovaPlugin {
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setData(Uri.parse(url));
                     cordova.getActivity().startActivity(intent);
-                    return true;
+                    override = true;
                 } catch (android.content.ActivityNotFoundException e) {
                     LOG.e(LOG_TAG, "Error with " + url + ": " + e.toString());
                 }
@@ -1199,7 +1247,7 @@ public class InAppBrowser extends CordovaPlugin {
                     intent.putExtra("address", address);
                     intent.setType("vnd.android-dir/mms-sms");
                     cordova.getActivity().startActivity(intent);
-                    return true;
+                    override = true;
                 } catch (android.content.ActivityNotFoundException e) {
                     LOG.e(LOG_TAG, "Error sending sms " + url + ":" + e.toString());
                 }
@@ -1220,7 +1268,7 @@ public class InAppBrowser extends CordovaPlugin {
                                 obj.put("type", "customscheme");
                                 obj.put("url", url);
                                 sendUpdate(obj, true);
-                                return true;
+                                override = true;
                             } catch (JSONException ex) {
                                 LOG.e(LOG_TAG, "Custom Scheme URI passed in has caused a JSON error.");
                             }
@@ -1229,7 +1277,10 @@ public class InAppBrowser extends CordovaPlugin {
                 }
             }
 
-            return false;
+            if (this.useBeforeload) {
+                this.waitForBeforeload = true;
+            }
+            return override;
         }
 
 
